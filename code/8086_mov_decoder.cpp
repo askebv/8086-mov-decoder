@@ -148,7 +148,7 @@ Disassemble8086(char* binaryFileName, char* outputFileName) {
 	{
 		numBytesForNextRegister = 2;
 
-		if ((*byte1Cursor & 0xFC) == 0x88) //MOV1: Register/memory to/from register
+		if ((*byte1Cursor & 0374) == 0210) //MOV1: Register/memory to/from register
 		{
 			output += "\nmov ";
 			outputLength += 5;
@@ -184,6 +184,9 @@ Disassemble8086(char* binaryFileName, char* outputFileName) {
 			} break;
 			InvalidDefaultCase;
 			}
+		}
+		else if ((*byte1Cursor & 0360) == 0260) { //MOV immediate to register
+			Assert("Not implemented"); break;
 		}
 		else { //different instruction
 			Assert("Not implemented"); break;
