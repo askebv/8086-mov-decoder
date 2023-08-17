@@ -1,4 +1,4 @@
-# 8086_mov_decoder
+# 8086 MOV decoder
 
 Disassembles a 16 bit binary, exclusively with MOV instructions, to an ASM file.
 Usage:
