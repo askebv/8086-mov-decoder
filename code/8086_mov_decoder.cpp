@@ -129,40 +129,8 @@ struct RegisterEncoding {
 	};
 };
 
-
-internal std::string
-NarrowRegisterEncodingToString(RegisterEncoding encoding) {
-	switch (encoding.byteRegister)
-	{
-		case AccumulatorLow: return "al";
-		case CountLow: return "cl";
-		case DataLow: return "dl";
-		case BaseLow: return "bl";
-		case AccumulatorHigh: return "ah";
-		case CountHigh: return "ch";
-		case DataHigh: return "dh";
-		case BaseHigh: return "bh";
-		InvalidDefaultCase;
-	}
-	return "ERR";
-}
-
-internal std::string
-WideRegisterEncodingToString(RegisterEncoding encoding) {
-	switch (encoding.wordRegister)
-	{
-		case AccumulatorXFull: return "ax";
-		case CountXFull: return "cx";
-		case DataXFull: return "dx";
-		case BaseXFull: return "bx";
-		case StackPointer: return "sp";
-		case BasePointer: return "bp";
-		case SourceIndex: return "si";
-		case DestinationIndex: return "di";
-		InvalidDefaultCase;
-	}
-	return "ERR";
-}
+std::string NarrowRegisters[8] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" };
+std::string WideRegisters[8] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di" };
 
 internal void
 Disassemble8086(char* binaryFileName, char* outputFileName) {
@@ -174,58 +142,63 @@ Disassemble8086(char* binaryFileName, char* outputFileName) {
 	uint8* byte1Cursor = (uint8*)entireBinary;
 	uint8* byte2Cursor = byte1Cursor + 1;
 
-	for (size_t i = 0; i < binaryLengthInBytes; i+=2)
+	uint32 cursorIndex = 0;
+	uint32 numBytesForNextRegister;
+	while (cursorIndex < binaryLengthInBytes)
 	{
+		numBytesForNextRegister = 2;
+
 		if ((*byte1Cursor & 0xFC) == 0x88) //MOV1: Register/memory to/from register
 		{
 			output += "\nmov ";
 			outputLength += 5;
-			bool is16Bit = (*byte1Cursor & 0x1); //!8bit
-			bool isREGDestination = (*byte1Cursor & 0x2); //REG either specifies Source or Destination
+			bool is16Bit = (*byte1Cursor & 01); //!8bit
+			bool isREGDestination = (*byte1Cursor & 02); //REG either specifies Source or Destination
 
-			RegisterEncoding registryEncoding = { (uint8)((*byte2Cursor & 0x38) >> 3) };
-			DisplacementMode displacementMode = (DisplacementMode)((uint8)((*byte2Cursor & 0xC0) >> 6));
+			RegisterEncoding registryEncoding = { (uint8)((*byte2Cursor & 070) >> 3) };
+			DisplacementMode displacementMode = (DisplacementMode)((uint8)((*byte2Cursor & 0300) >> 6));
 			displacementMode = displacementMode == Memory_None && registryEncoding.value == 6 ? Memory_16bit : displacementMode;
 
 			switch (displacementMode)
 			{
-				case Memory_None: Assert("Not implemented"); break;
-				case Memory_8bit: Assert("Not implemented"); break;
-				case Memory_16bit: Assert("Not implemented"); break;
-				case Register_None:
-				{
-					RegisterEncoding secondRegistryEncoding = { (uint8)((*byte2Cursor & 0x7)) };
-					std::string firstOperand;
-					std::string secondOperand;
+			case Memory_None: Assert("Not implemented"); break;
+			case Memory_8bit: Assert("Not implemented"); break;
+			case Memory_16bit: Assert("Not implemented"); break;
+			case Register_None:
+			{
+				RegisterEncoding secondRegistryEncoding = { (uint8)((*byte2Cursor & 07)) };
+				std::string firstOperand;
+				std::string secondOperand;
 
-					if (is16Bit)
-					{
-						firstOperand = WideRegisterEncodingToString(registryEncoding);
-						secondOperand = WideRegisterEncodingToString(secondRegistryEncoding);
-					}
-					else {
-						firstOperand = NarrowRegisterEncodingToString(registryEncoding);
-						secondOperand = NarrowRegisterEncodingToString(secondRegistryEncoding);
-					}
-					output += isREGDestination ? firstOperand + ", " + secondOperand : secondOperand + ", " + firstOperand;
-					outputLength += 6;
-				} break;
-				InvalidDefaultCase;
+				if (is16Bit)
+				{
+					firstOperand = WideRegisters[registryEncoding.value];
+					secondOperand = WideRegisters[secondRegistryEncoding.value];
+				}
+				else {
+					firstOperand = NarrowRegisters[registryEncoding.value];
+					secondOperand = NarrowRegisters[secondRegistryEncoding.value];
+				}
+				output += isREGDestination ? firstOperand + ", " + secondOperand : secondOperand + ", " + firstOperand;
+				outputLength += 6;
+			} break;
+			InvalidDefaultCase;
 			}
 		}
 		else { //different instruction
 			Assert("Not implemented"); break;
 		}
 
-		byte1Cursor += 2;
-		byte2Cursor += 2;
+		byte1Cursor += numBytesForNextRegister;
+		byte2Cursor += numBytesForNextRegister;
+		cursorIndex += numBytesForNextRegister;
 	}
 	WriteEntireFile(outputFileName, outputLength, const_cast<void*>(static_cast<const void*>(output.c_str())));
 }
 
 int main(int argc, char* argv[]) {
-	char* inputFileName = argc > 0 ? argv[1] : "listing_0038_many_register_mov";
-	char* outputFileName = argc > 1 ? argv[2] : "test.asm";
+	char* inputFileName = argc > 1 ? argv[1] : "..\\data\\listing_0038_many_register_mov";
+	char* outputFileName = argc > 2 ? argv[2] : "..\\data\\test.asm";
 	Disassemble8086(inputFileName, outputFileName);
 	return 0;
 }
