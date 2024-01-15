@@ -1,0 +1,3 @@
+[submodule "data/computer_enhance"]
+	path = data/computer_enhance
+	url = https://github.com/cmuratori/computer_enhance
