@@ -1,6 +1,7 @@
 # 8086 decoder
 
-Disassembles a 16 bit binary to an ASM file.
+Disassembles a 16 bit binary to an ASM file. **Doesn't support the ESC instruction.**
+
 Usage:
 Launch the exe with two arguments, first is the source binary filename (and relative path), second is the output filename (and relative path).
 
